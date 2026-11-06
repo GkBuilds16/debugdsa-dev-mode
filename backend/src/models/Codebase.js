@@ -1,27 +1,61 @@
 import mongoose from 'mongoose';
 
 const codebaseSchema = new mongoose.Schema({
+  seriesId: { type: mongoose.Schema.Types.ObjectId, index: true },
   ownerId: { type: String, required: true, index: true },
   title: { type: String, required: true, trim: true, maxlength: 100 },
   description: { type: String, required: true, maxlength: 300 },
+  detailedDescription: { type: String, default: '', maxlength: 20000 },
+  estimatedMinutes: { type: Number, min: 5, max: 1000, default: 60 },
   problemStatement: { type: String, default: '', maxlength: 10000 },
   category: { type: String, default: 'General', maxlength: 60 },
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Medium' },
   languages: [{ type: String, maxlength: 30 }],
   technologies: [{ type: String, maxlength: 40 }],
+  frameworks: [{ type: String, maxlength: 40 }],
+  runtimeVersions: { type: mongoose.Schema.Types.Mixed, default: {} },
+  databaseTechnology: { type: String, default: '', maxlength: 100 },
+  requiredTools: [{ type: String, maxlength: 100 }],
+  dependencies: [{ type: String, maxlength: 200 }],
+  commands: { build: { type: String, maxlength: 500 }, start: { type: String, maxlength: 500 }, test: { type: String, maxlength: 500 } },
   tags: [{ type: String, maxlength: 30 }],
   sourceUrl: { type: String, default: '', maxlength: 500 },
+  sourceMetadata: { provider: { type: String, enum: ['manual', 'zip', 'github'], default: 'manual' }, importedAt: Date, commit: String },
+  readme: { type: String, default: '', maxlength: 20000 },
   instructions: { type: String, default: '', maxlength: 10000 },
+  prerequisites: [{ type: String, maxlength: 300 }],
+  environmentDocumentation: { type: String, default: '', maxlength: 10000 },
+  configurationInstructions: { type: String, default: '', maxlength: 10000 },
+  expectedStructure: [{ type: String, maxlength: 300 }],
+  bugTitle: { type: String, default: '', maxlength: 150 },
+  bugDescription: { type: String, default: '', maxlength: 10000 },
+  currentBehavior: { type: String, default: '', maxlength: 5000 },
+  expectedBehavior: { type: String, default: '', maxlength: 5000 },
+  actualBehavior: { type: String, default: '', maxlength: 5000 },
+  reproductionSteps: [{ type: String, maxlength: 1000 }],
+  relevantFiles: [{ type: String, maxlength: 300 }],
+  relevantSymbols: [{ type: String, maxlength: 200 }],
+  errorLogs: { type: String, default: '', maxlength: 10000 },
+  acceptanceCriteria: [{ type: String, maxlength: 1000 }],
+  expectedDeliverables: [{ type: String, maxlength: 500 }],
   publicHints: [{ type: String, maxlength: 500 }],
   privateNotes: { type: String, select: false, default: '' },
+  intendedBugExplanation: { type: String, select: false, default: '', maxlength: 10000 },
+  solutionApproach: { type: String, select: false, default: '', maxlength: 10000 },
+  evaluationRubric: { type: [mongoose.Schema.Types.Mixed], select: false, default: [] },
+  hiddenRequirements: { type: [String], select: false, default: [] },
+  internalReferences: { type: [String], select: false, default: [] },
   hiddenTests: { type: [mongoose.Schema.Types.Mixed], select: false, default: [] },
-  files: { type: [{ path: String, content: String }], default: [] },
+  directories: [{ type: String, maxlength: 300 }],
+  files: { type: [{ path: { type: String, required: true, maxlength: 300 }, storageKey: { type: String, select: false }, size: { type: Number, default: 0 }, contentType: String, content: { type: String, select: false } }], default: [] },
   state: { type: String, enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'], default: 'DRAFT', index: true },
   version: { type: Number, default: 1 },
   viewCount: { type: Number, default: 0 },
   attemptCount: { type: Number, default: 0 }
 }, { timestamps: true, optimisticConcurrency: true });
 
+codebaseSchema.index({ ownerId: 1, state: 1, updatedAt: -1 });
 codebaseSchema.index({ state: 1, createdAt: -1 });
 codebaseSchema.index({ title: 'text', description: 'text', tags: 'text' });
+codebaseSchema.pre('validate', function setSeriesId() { if (!this.seriesId) this.seriesId = this._id; });
 export default mongoose.model('Codebase', codebaseSchema);

@@ -7,7 +7,7 @@ import Submission from './models/Submission.js';
 
 let server;
 let baseUrl;
-const original = { auth: process.env.AUTH_MODE, node: process.env.NODE_ENV, devUser: process.env.DEV_USER_ID, find: Codebase.find, count: Codebase.countDocuments, findOne: Codebase.findOne, findOneAndUpdate: Codebase.findOneAndUpdate, attemptUpdate: Attempt.findOneAndUpdate, submissionFind: Submission.find };
+const original = { auth: process.env.AUTH_MODE, node: process.env.NODE_ENV, devUser: process.env.DEV_USER_ID, find: Codebase.find, count: Codebase.countDocuments, findOne: Codebase.findOne, findOneAndUpdate: Codebase.findOneAndUpdate, save: Codebase.prototype.save, attemptUpdate: Attempt.findOneAndUpdate, submissionFind: Submission.find };
 
 before(async () => {
   process.env.AUTH_MODE = 'development';
@@ -25,6 +25,7 @@ after(async () => {
   Codebase.findOneAndUpdate = original.findOneAndUpdate;
   Attempt.findOneAndUpdate = original.attemptUpdate;
   Submission.find = original.submissionFind;
+  Codebase.prototype.save = original.save;
   if (original.auth === undefined) delete process.env.AUTH_MODE; else process.env.AUTH_MODE = original.auth;
   if (original.node === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = original.node;
   if (original.devUser === undefined) delete process.env.DEV_USER_ID; else process.env.DEV_USER_ID = original.devUser;
@@ -74,6 +75,17 @@ test('creator detail query scopes the lookup to the authenticated owner', async 
   const response = await fetch(`${baseUrl}/api/v1/creator/codebases/507f1f77bcf86cd799439011`);
   assert.equal(response.status, 404);
   assert.equal(query.ownerId, process.env.DEV_USER_ID || 'local-creator');
+});
+
+test('creator draft creation derives ownership and rejects privileged mass assignment', async () => {
+  Codebase.prototype.save = async function saveMock() { return this; };
+  const forbidden = await fetch(`${baseUrl}/api/v1/creator/codebases`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Test', description: 'Description', ownerId: 'attacker', state: 'PUBLISHED' }) });
+  assert.equal(forbidden.status, 422);
+  const response = await fetch(`${baseUrl}/api/v1/creator/codebases`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Test project', description: 'A test draft' }) });
+  assert.equal(response.status, 201);
+  const body = await response.json();
+  assert.equal(body.data.ownerId, 'local-creator');
+  assert.equal(body.data.state, 'DRAFT');
 });
 
 test('candidate workspace updates require the owning user and submission lists omit submitted source', async () => {

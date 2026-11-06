@@ -5,6 +5,9 @@ An independent React and Express feature package for **Post Codebase**, **View C
 ## Current implementation
 
 - Creator-owned drafts, edit/version conflict handling, publish validation, archive, and draft deletion.
+- Post Codebase creator dashboard with persisted status metrics, search/filters, preview, publish/archive/restore, and published version history.
+- Multi-section Post Codebase editor with metadata, setup instructions, source tree editing, ZIP import, autosave, candidate preview, and private interviewer evaluation fields.
+- Published version snapshots and independent draft forks; project text is held in private local storage using generated keys.
 - Public, paginated published-codebase discovery with text and difficulty filters.
 - Candidate bookmarks, private attempts/workspaces, and submission snapshots are persisted through APIs.
 - Battle scheduling records, creator-role checks, authenticated registration with unique and capacity constraints, and server deadline checks.
@@ -12,7 +15,7 @@ An independent React and Express feature package for **Post Codebase**, **View C
 - Candidate execution and competition rankings remain disabled until a genuine isolated evaluator exists.
 - Dark responsive React workspace for creator creation/editing, discovery/detail viewing, and battle registration.
 
-This is an active implementation baseline, not a claim that every item in the master implementation brief is already delivered. See [known limitations](docs/deployment.md).
+GitHub import currently validates a public repository URL and then returns 501; it does not fetch source. MongoDB connectivity and persistent-storage deployment have not been verified. This is an active implementation baseline, not a claim that every item in the master implementation brief is delivered. See [known limitations](docs/deployment.md).
 
 ## Run locally
 
@@ -34,3 +37,7 @@ The default identity adapter is development-only and assigns the configured loca
 ## API prefix
 
 All endpoints use `/api/v1`. Responses follow `{ success, data, pagination?, error? }`. See [API contracts](docs/api-contracts.md).
+
+## Checks
+
+Run backend tests with `npm test`, frontend component tests with `npm run test -w frontend`, and the production frontend bundle with `npm run build`. Tests mock database calls and do not prove MongoDB connectivity. See [testing](docs/testing.md) for coverage and gaps.

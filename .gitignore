@@ -5,4 +5,5 @@ backend/.env
 coverage/
 *.log
 uploads/
+backend/storage-data/
 .DS_Store

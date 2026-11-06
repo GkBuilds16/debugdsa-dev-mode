@@ -18,7 +18,7 @@ flowchart LR
   ID -. integration .-> JWT[DebugDSA JWT middleware]
 ```
 
-Frontend API calls are isolated in the current application entry point; feature services can be extracted as additional screens mature. Backend routes are split between creator codebases, public discovery, and battle registration. Mongoose models are feature-specific. Identity is normalized to `{ id, roles }` and injected before feature routes.
+The frontend entry point switches between discovery, battles, creator dashboard, and the Post Codebase editor. Creator dashboard/editor components live under `frontend/src/modules/post-codebase`. The backend mounts a dedicated creator router at `/api/v1/creator`; it delegates validation, lifecycle operations, file policy, ZIP parsing, local file storage, and response serialization to feature-specific modules. Older discovery, candidate-attempt, and battle handlers remain in `backend/src/app.js`, so the backend is not yet consistently layered. Identity is normalized to `{ id, roles }` and injected before feature routes.
 
 ## Decisions
 
@@ -26,9 +26,9 @@ Frontend API calls are isolated in the current application entry point; feature 
 - MongoDB/Mongoose matches the observed platform persistence model.
 - REST is used first. Socket.IO is not added until a live room needs actual shared realtime updates.
 - Code execution is intentionally not implemented. No candidate content is executed in Express.
-- Source files are currently stored as bounded document content; production deployments should move bundles to a storage adapter before accepting archives or large projects.
+- Creator source files are stored under a private local directory using generated storage keys, with paths and metadata in MongoDB. ZIP ingestion is bounded and text-only; GitHub fetching remains disabled. Production needs durable shared/object storage before horizontal scaling.
 - Development identity is explicitly gated by `AUTH_MODE=development` and rejected in production.
 
 ## Audit findings
 
-The initial audit fixed a missing `/api/v1` mount for health and public discovery, moved dotenv loading before dynamic app import so environment settings are applied when middleware is configured, and added explicit creator/admin authorization. Current route handlers still live together in `backend/src/app.js`; there are not yet separate controller, service, validator, and repository layers. This is the main structural debt to address incrementally while adding modules. No broad rewrite was made during the audit.
+Earlier foundation work fixed the `/api/v1` mount, dotenv initialization, and explicit creator/admin authorization. Post Codebase now uses router, service, validator, and serializer boundaries; public and creator serializers are separate. Existing candidate/battle routes still live in `backend/src/app.js`. Publish snapshots and the active codebase state use separate MongoDB writes without a transaction. MongoDB connectivity and deployment storage behavior were not verified in this environment.
