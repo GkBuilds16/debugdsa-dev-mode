@@ -5,10 +5,11 @@ import Codebase from './models/Codebase.js';
 import Attempt from './models/Attempt.js';
 import Submission from './models/Submission.js';
 import Bookmark from './models/Bookmark.js';
+import Battle from './models/Battle.js';
 
 let server;
 let baseUrl;
-const original = { auth: process.env.AUTH_MODE, node: process.env.NODE_ENV, devUser: process.env.DEV_USER_ID, find: Codebase.find, count: Codebase.countDocuments, findOne: Codebase.findOne, findOneAndUpdate: Codebase.findOneAndUpdate, save: Codebase.prototype.save, attemptFind: Attempt.findOne, attemptUpdate: Attempt.findOneAndUpdate, submissionFind: Submission.find, submissionFindOne: Submission.findOne, bookmarkFind: Bookmark.find, bookmarkCreate: Bookmark.create, bookmarkDelete: Bookmark.deleteOne };
+const original = { auth: process.env.AUTH_MODE, node: process.env.NODE_ENV, devUser: process.env.DEV_USER_ID, find: Codebase.find, count: Codebase.countDocuments, findOne: Codebase.findOne, findOneAndUpdate: Codebase.findOneAndUpdate, save: Codebase.prototype.save, attemptFind: Attempt.findOne, attemptUpdate: Attempt.findOneAndUpdate, submissionFind: Submission.find, submissionFindOne: Submission.findOne, bookmarkFind: Bookmark.find, bookmarkCreate: Bookmark.create, bookmarkDelete: Bookmark.deleteOne, battleFindById: Battle.findById };
 
 before(async () => {
   process.env.AUTH_MODE = 'development';
@@ -31,6 +32,7 @@ after(async () => {
   Bookmark.find = original.bookmarkFind;
   Bookmark.create = original.bookmarkCreate;
   Bookmark.deleteOne = original.bookmarkDelete;
+  Battle.findById = original.battleFindById;
   Codebase.prototype.save = original.save;
   if (original.auth === undefined) delete process.env.AUTH_MODE; else process.env.AUTH_MODE = original.auth;
   if (original.node === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = original.node;
@@ -155,7 +157,7 @@ test('every candidate API group rejects requests without a verified identity', a
   const previousAuth = process.env.AUTH_MODE, previousSecret = process.env.JWT_SECRET;
   process.env.AUTH_MODE = 'jwt'; delete process.env.JWT_SECRET;
   try {
-    for (const path of ['/api/v1/codebases', '/api/v1/bookmarks', '/api/v1/attempts', '/api/v1/submissions', '/api/v1/progress']) {
+    for (const path of ['/api/v1/codebases', '/api/v1/bookmarks', '/api/v1/attempts', '/api/v1/submissions', '/api/v1/progress', '/api/v1/codebase-battles']) {
       const response = await fetch(`${baseUrl}${path}`);
       assert.equal(response.status, 401, `${path} must require authentication`);
     }
@@ -163,6 +165,25 @@ test('every candidate API group rejects requests without a verified identity', a
     if (previousAuth === undefined) delete process.env.AUTH_MODE; else process.env.AUTH_MODE = previousAuth;
     if (previousSecret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = previousSecret;
   }
+});
+
+test('battle leaderboard hides drafts and battles outside candidate eligibility', async () => {
+  const priorUser = process.env.DEV_USER_ID;
+  process.env.DEV_USER_ID = 'candidate-b';
+  let selectedFields;
+  try {
+    Battle.findById = () => ({ select: async fields => {
+      selectedFields = fields;
+      return { _id: 'battle-id', status: 'SCHEDULED', codebaseVersionId: 'version-id', eligibleUserIds: ['candidate-a'], startsAt: new Date(Date.now() + 60_000), registrationDeadline: new Date(Date.now() + 30_000), durationMinutes: 30 };
+    } });
+    const response = await fetch(`${baseUrl}/api/v1/codebase-battles/507f1f77bcf86cd799439011/leaderboard`);
+    assert.equal(response.status, 404);
+    assert.equal(selectedFields, '+eligibleUserIds');
+  } finally { if (priorUser === undefined) delete process.env.DEV_USER_ID; else process.env.DEV_USER_ID = priorUser; }
+
+  Battle.findById = () => ({ select: async () => ({ _id: 'battle-id', status: 'DRAFT', codebaseVersionId: 'version-id', eligibleUserIds: [] }) });
+  const draft = await fetch(`${baseUrl}/api/v1/codebase-battles/507f1f77bcf86cd799439011/leaderboard`);
+  assert.equal(draft.status, 404);
 });
 
 test('candidate workspace and snapshot reads deny a different candidate and never cross owner scope', async () => {

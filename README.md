@@ -11,10 +11,18 @@ An independent React and Express feature package for **Post Codebase**, **View C
 - Candidate discovery filters by text, difficulty, language, framework, tag, sort, and page; only published codebases are returned.
 - Candidate challenge details, lazy source-file explorer, private multi-file editor, debounced autosave/recovery, reset, immutable submission snapshots, attempt history, bookmarks, and persisted progress.
 - Candidate workspace overrides and submission snapshots use generated local storage references; MongoDB stores ownership, revision, state, and file metadata.
-- Battle scheduling records, creator-role checks, authenticated registration with unique and capacity constraints, and server deadline checks.
+- Organizer battle management with draft creation, exact published-codebase-version binding, scheduling, pre-start editing, cancellation, participant reports, and post-completion private submission review.
+- Candidate battle discovery with search, status/difficulty/language filters, sorting, pagination, registration/cancellation, lobby polling, server-synchronized countdowns, and candidate-only history/results.
+- Conditional capacity reservation, unique candidate registration, eligibility checks, and server-enforced registration/workspace/submission cutoffs.
+- Participant-isolated battle workspaces with bounded file edits, revisioned autosave/recovery, and immutable submission snapshots using the existing private local-file storage adapter.
+- Server lifecycle recovery at startup and periodic intervals. Evaluation remains disabled and no rankings are generated.
 - Candidate APIs explicitly omit creator notes and hidden tests.
 - Candidate execution and competition rankings remain disabled until a genuine isolated evaluator exists.
-- Responsive React workspace for creator editing, candidate discovery/debugging, and the existing battle-registration screen.
+- Responsive React workspace for creator editing, candidate discovery/debugging, and battle management/participation.
+
+See the [implementation and verification matrix](docs/verification-matrix.md) for audit coverage and unverified integrations.
+
+Socket.IO is not configured; battle state uses REST polling. Legacy battle records without published-version references are excluded from candidate discovery and need a reviewed migration before organizer use.
 
 GitHub import currently validates a public repository URL and then returns 501; it does not fetch source. MongoDB connectivity and persistent-storage deployment have not been verified. This is an active implementation baseline, not a claim that every item in the master implementation brief is delivered. See [known limitations](docs/deployment.md).
 

@@ -50,11 +50,32 @@ Base URL: `/api/v1`. Success shape: `{ "success": true, "data": ... }`; collecti
 | DELETE | `/creator/codebases/:id/files?path=` | Creator/admin + owner | Delete a draft source file |
 | POST/DELETE | `/creator/codebases/:id/directories` | Creator/admin + owner | Add/remove an empty logical directory |
 | POST | `/creator/codebases/:id/import-github` | Creator/admin + owner | Validates a public GitHub URL, then returns 501 because fetch/import is disabled |
-| GET | `/codebase-battles` | Authenticated | Scheduled battle listing |
-| POST | `/codebase-battles` | Creator or admin | Schedule a battle from own published codebase |
-| POST | `/codebase-battles/:id/register` | Authenticated | Register before deadline; duplicate rejected |
-| GET | `/codebase-battles/:id/leaderboard` | Authenticated | Empty disabled response, explicitly not ranked |
+| GET | `/codebase-battles?q=&status=&difficulty=&language=&sort=&page=&limit=` | Authenticated eligible candidate | Eligible version-bound battles; status `upcoming`, `live`, or `completed`; filters and pagination |
+| POST | `/codebase-battles` | Creator or admin | Create battle draft from an owned codebase and published version |
+| GET | `/codebase-battles/mine` | Creator or admin | List owned battles |
+| GET | `/codebase-battles/manage/:id` | Creator/admin + owner | Organizer detail for an owned battle |
+| GET | `/codebase-battles/manage/:id/summary` | Creator/admin + owner | Owned battle with registration and submission counts |
+| PATCH | `/codebase-battles/manage/:id` | Creator/admin + owner | Edit battle before start, including exact challenge version |
+| POST | `/codebase-battles/manage/:id/publish` | Creator/admin + owner | Publish a valid scheduled draft |
+| POST | `/codebase-battles/manage/:id/cancel` | Creator/admin + owner | Cancel a battle before it starts |
+| GET | `/codebase-battles/manage/:id/participants` | Creator/admin + owner | Registered candidate IDs and submission status |
+| GET | `/codebase-battles/manage/:id/submissions` | Creator/admin + owner | Submission metadata after battle completion |
+| GET | `/codebase-battles/manage/:id/submissions/:submissionId` | Creator/admin + owner | Read an authorized submission snapshot after completion |
+| POST | `/codebase-battles/manage/:id/results/publish` | Creator/admin + owner | Publish completion/submission status; rankings remain unavailable |
+| GET | `/codebase-battles/:id` | Eligible candidate | Public battle/challenge preview, own registration, server time |
+| GET | `/codebase-battles/:id/lobby` | Registered candidate | Lobby state and server-authoritative timestamps |
+| GET | `/codebase-battles/:id/registration` | Authenticated | Current user's registration status |
+| POST/DELETE | `/codebase-battles/:id/register` | Eligible candidate | Register or cancel before registration cutoff |
+| GET/POST | `/codebase-battles/:id/workspace` | Registered candidate | Read own workspace or create during live battle |
+| PATCH | `/codebase-battles/:id/workspace/:workspaceId` | Workspace owner | Save validated file deltas with revision check before server deadline |
+| POST | `/codebase-battles/:id/submit` | Workspace owner | Create one immutable snapshot before server deadline; evaluation is `NOT_EVALUATED` |
+| GET | `/codebase-battles/:id/results` | Eligible candidate | Completion and own submission status; no rankings |
+| GET | `/codebase-battles/submissions/:submissionId` | Submission owner | Read own snapshot contents |
+| GET | `/codebase-battles/history` | Authenticated | Own registration, submission, and battle history |
+| GET | `/codebase-battles/:id/leaderboard` | Eligible candidate | Explicit disabled response with `rankings: null`; drafts, cancelled, legacy-unbound, and ineligible battles are hidden |
 
-Endpoints from the full product brief that are not listed above are not implemented yet. Battle cancellation/management, participant listing, live battle submissions, and actual evaluation remain pending.
+Features not implemented include an evaluation job runner/sandbox, verified scores, rankings, Socket.IO events, user-name participant profiles, and automatic capacity/report reconciliation after process failure. Battles use REST polling and expose no fake evaluation output.
 
-Creator routes require creator or admin role and scope every record lookup to the authenticated owner. Draft inputs are allowlisted; owner, state, and internal storage keys are server-controlled. Candidate routes read published records only and use an explicit public serializer, which omits private interviewer fields, version-series internals, and storage keys. Candidate workspace writes require ownership and a monotonically increasing revision. ZIP ingestion is limited by compressed size, expanded size, file count, per-file bytes, accepted extensions, and safe relative paths. Project, workspace, and snapshot files currently use private local disk storage configured by `CODEBASE_STORAGE_DIR`.
+Creator routes require creator or admin role and scope every record lookup to the authenticated owner. Draft inputs are allowlisted; owner, state, and internal storage keys are server-controlled. Candidate routes read published records only and use an explicit public serializer, which omits private interviewer fields, version-series internals, and storage keys. Candidate workspace writes require ownership and a monotonically increasing revision. ZIP ingestion is limited by compressed size, expanded size, file count, per-file bytes, accepted extensions, and safe relative paths. Project, candidate workspace, and submission files currently use private local disk storage configured by `CODEBASE_STORAGE_DIR`.
+
+Battle discovery and detail reads exclude drafts, cancellations, and legacy records without a codebase-version reference. Lifecycle is computed from server timestamps and persisted by startup/periodic recovery; the client countdown is display only. There is no Socket.IO server. Registration capacity uses a conditional database update plus the unique battle/user index and compensating rollback; MongoDB transaction and crash behavior has not been verified. Candidate workspace and submission queries bind battle, registration, workspace, and authenticated user. Results never contain rankings without verified evaluator output.

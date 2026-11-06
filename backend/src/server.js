@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: new URL('../.env', import.meta.url) });
 const { default: app } = await import('./app.js');
+const { recoverBattleLifecycle } = await import('./modules/battles/services/lifecycle.js');
 
 const port = Number(process.env.PORT || 5000);
 try {
@@ -14,7 +15,10 @@ try {
   }
   if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is required.');
   await mongoose.connect(process.env.MONGODB_URI);
+  await recoverBattleLifecycle();
   app.listen(port, () => console.log(`Dev Mode API listening on ${port}`));
+  const lifecycleTimer = setInterval(() => recoverBattleLifecycle().catch(error => console.error(JSON.stringify({ level: 'error', module: 'battle-lifecycle', name: error.name || 'Error' }))), 15_000);
+  lifecycleTimer.unref();
 } catch (error) {
   console.error(`Startup failed: ${error.message.startsWith('Production requires') || error.message.startsWith('Development identity') || error.message === 'MONGODB_URI is required.' ? error.message : 'database connection could not be established.'}`);
   process.exitCode = 1;
