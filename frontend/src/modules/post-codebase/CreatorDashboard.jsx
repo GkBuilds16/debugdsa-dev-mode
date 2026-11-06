@@ -1,7 +1,8 @@
 ﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ArrowUpRight, Archive, Code2, FileClock, FolderGit2, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { apiFetch } from '../../apiClient.js';
 
-const api=async(path,options={})=>{const response=await fetch(`/api/v1${path}`,{headers:{'Content-Type':'application/json'},...options});const body=response.status===204?null:await response.json();if(!response.ok)throw new Error(body?.error?.message||'Request failed');return body};
+const api=async(path,options={})=>{const response=await apiFetch(path,options);const body=response.status===204?null:await response.json();if(!response.ok)throw new Error(body?.error?.message||'Request failed');return body};
 export default function CreatorDashboard({onCreate,onEdit,onNotice}){
   const [rows,setRows]=useState([]),[metrics,setMetrics]=useState({total:0,published:0,drafts:0,archived:0}),[page,setPage]=useState(1),[pages,setPages]=useState(1),[query,setQuery]=useState(''),[status,setStatus]=useState(''),[difficulty,setDifficulty]=useState(''),[language,setLanguage]=useState(''),[framework,setFramework]=useState(''),[sort,setSort]=useState('updated'),[busy,setBusy]=useState(false),[preview,setPreview]=useState(null),[history,setHistory]=useState(null);
   const load=useCallback(async()=>{

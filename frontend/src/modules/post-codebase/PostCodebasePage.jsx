@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Archive, Check, ChevronRight, FileCode2, FilePlus2, FolderPlus, Github, LoaderCircle, Plus, Save, Send, Upload, X } from 'lucide-react';
+import { apiFetch } from '../../apiClient.js';
 
 const blank = () => ({ title:'', description:'', detailedDescription:'', difficulty:'Medium', estimatedMinutes:60, category:'General', tags:[], languages:['JavaScript'], frameworks:[], technologies:[], runtimeVersions:{}, databaseTechnology:'', requiredTools:[], dependencies:[], commands:{build:'',start:'',test:''}, sourceUrl:'', readme:'', instructions:'', environmentDocumentation:'', configurationInstructions:'', prerequisites:[], expectedStructure:[], problemStatement:'', bugTitle:'', bugDescription:'', currentBehavior:'', expectedBehavior:'', actualBehavior:'', reproductionSteps:[], relevantFiles:[], relevantSymbols:[], errorLogs:'', acceptanceCriteria:[], expectedDeliverables:[], publicHints:[], privateNotes:'', intendedBugExplanation:'', solutionApproach:'', evaluationRubric:[], hiddenRequirements:[], internalReferences:[], hiddenTests:[] });
 const toForm = item => { const base=blank();return Object.fromEntries(Object.keys(base).map(key=>[key,key==='commands'?{...base.commands,...(item.commands||{})}:item[key]??base[key]])); };
-const api = async (path, options={}) => { const headers=options.body instanceof FormData?{}:{'Content-Type':'application/json'}; const res=await fetch(`/api/v1${path}`,{headers,...options}); const body=res.status===204?null:await res.json(); if(!res.ok) throw new Error(body?.error?.message||'Request failed'); return body; };
+const api = async (path, options={}) => { const res=await apiFetch(path,options); const body=res.status===204?null:await res.json(); if(!res.ok) throw new Error(body?.error?.message||'Request failed'); return body; };
 const listFields = new Set(['tags','languages','frameworks','technologies','requiredTools','dependencies','prerequisites','expectedStructure','reproductionSteps','relevantFiles','relevantSymbols','acceptanceCriteria','expectedDeliverables','publicHints','hiddenRequirements','internalReferences']);
 const metadataOnly = form => { const value={...form}; delete value.files; delete value.directories; return value; };
 

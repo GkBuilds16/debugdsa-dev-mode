@@ -18,7 +18,7 @@ flowchart LR
   ID -. integration .-> JWT[DebugDSA JWT middleware]
 ```
 
-The frontend entry point switches between discovery, battles, creator dashboard, and the Post Codebase editor. Creator dashboard/editor components live under `frontend/src/modules/post-codebase`. The backend mounts a dedicated creator router at `/api/v1/creator`; it delegates validation, lifecycle operations, file policy, ZIP parsing, local file storage, and response serialization to feature-specific modules. Older discovery, candidate-attempt, and battle handlers remain in `backend/src/app.js`, so the backend is not yet consistently layered. Identity is normalized to `{ id, roles }` and injected before feature routes.
+The frontend entry point switches between candidate discovery/workspace, battles, creator dashboard, and the Post Codebase editor. Creator dashboard/editor components live under `frontend/src/modules/post-codebase`; candidate screens live under `frontend/src/modules/view-codebases`. A shared API client gets a bearer token from the host's `window.DebugDSAAuth.getAccessToken()` adapter. The backend mounts creator and candidate routers beneath `/api/v1`; the candidate feature separates routes/controllers, workspace service, validators, serializers, and a disabled evaluation provider. MongoDB stores metadata and generated local storage keys; source contents and submission snapshots live in private local storage. Older battle handlers remain in `backend/src/app.js`, so the backend is not yet fully modular. Identity is normalized to `{ id, roles }` and injected before protected feature routes.
 
 ## Decisions
 
@@ -27,8 +27,9 @@ The frontend entry point switches between discovery, battles, creator dashboard,
 - REST is used first. Socket.IO is not added until a live room needs actual shared realtime updates.
 - Code execution is intentionally not implemented. No candidate content is executed in Express.
 - Creator source files are stored under a private local directory using generated storage keys, with paths and metadata in MongoDB. ZIP ingestion is bounded and text-only; GitHub fetching remains disabled. Production needs durable shared/object storage before horizontal scaling.
+- Candidate workspaces store per-candidate file overrides and revision numbers; submissions copy the candidate files into distinct immutable storage objects. Candidate reads are owner-scoped, while public codebase detail omits interviewer-only material and source contents. Evaluation always returns `NOT_EVALUATED`; no source code is run.
 - Development identity is explicitly gated by `AUTH_MODE=development` and rejected in production.
 
 ## Audit findings
 
-Earlier foundation work fixed the `/api/v1` mount, dotenv initialization, and explicit creator/admin authorization. Post Codebase now uses router, service, validator, and serializer boundaries; public and creator serializers are separate. Existing candidate/battle routes still live in `backend/src/app.js`. Publish snapshots and the active codebase state use separate MongoDB writes without a transaction. MongoDB connectivity and deployment storage behavior were not verified in this environment.
+Earlier foundation work fixed the `/api/v1` mount, dotenv initialization, and explicit creator/admin authorization. Post Codebase and View Codebases use router, service, validator, and serializer boundaries; public and creator serializers are separate. Battle routes remain in `backend/src/app.js`. Publish snapshots and active codebase state use separate MongoDB writes without a transaction. MongoDB connectivity, durable storage, and deployment behavior have not been verified in this environment.

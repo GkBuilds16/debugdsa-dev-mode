@@ -49,6 +49,7 @@ const codebaseSchema = new mongoose.Schema({
   directories: [{ type: String, maxlength: 300 }],
   files: { type: [{ path: { type: String, required: true, maxlength: 300 }, storageKey: { type: String, select: false }, size: { type: Number, default: 0 }, contentType: String, content: { type: String, select: false } }], default: [] },
   state: { type: String, enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'], default: 'DRAFT', index: true },
+  publishedAt: { type: Date, default: null },
   version: { type: Number, default: 1 },
   viewCount: { type: Number, default: 0 },
   attemptCount: { type: Number, default: 0 }

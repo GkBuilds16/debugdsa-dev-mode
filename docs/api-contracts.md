@@ -7,16 +7,25 @@ Base URL: `/api/v1`. Success shape: `{ "success": true, "data": ... }`; collecti
 | Method | Path | Access | Behavior |
 |---|---|---|---|
 | GET | `/health` | Public | API and DB readiness, evaluation disabled status |
-| GET | `/codebases?q=&difficulty=&language=&page=&limit=&sort=` | Public | Published-only filtered list |
-| GET | `/codebases/:id` | Public | Published detail; increments views |
+| GET | `/codebases?q=&difficulty=&language=&framework=&tag=&page=&limit=&sort=` | Authenticated candidate | Published-only search/filter, sort by newest/oldest/difficulty/estimated time, and pagination |
+| GET | `/codebases/:id` | Authenticated candidate | Candidate-safe published details and file metadata; increments views |
+| GET | `/codebases/:id/files?q=` | Authenticated candidate | Published file tree and metadata; optional filename search |
+| GET | `/codebases/:id/file?path=` | Authenticated candidate | Read one validated published text file |
 | POST | `/codebases/:id/bookmark` | Authenticated | Bookmark published codebase |
 | DELETE | `/codebases/:id/bookmark` | Authenticated | Remove own bookmark |
 | GET | `/bookmarks` | Authenticated | Current user's published bookmarks |
-| GET | `/codebases/:id/attempts` | Authenticated | Current user's attempt metadata |
-| POST | `/codebases/:id/attempts` | Authenticated | Create a candidate-owned copy of source files |
-| PATCH | `/codebases/:id/attempts/:attemptId` | Attempt owner | Save candidate workspace; rejects traversal paths |
-| POST | `/codebases/:id/submissions` | Attempt owner | Persist submission snapshot, evaluation disabled |
+| GET/POST | `/codebases/:id/workspace` | Authenticated | Retrieve active version-bound workspace or create/retrieve one; candidate files returned without storage keys |
+| PATCH | `/codebases/:id/workspace/:attemptId` | Workspace owner | Save file deltas/reset paths with required revision; rejects paths outside source tree |
+| POST | `/codebases/:id/workspace/:attemptId/reset` | Workspace owner | Reset candidate overrides to published source with revision check |
+| GET | `/attempts` | Authenticated | Current user's attempt and submission summaries |
+| GET | `/codebases/:id/attempts` | Authenticated | Current user's attempts for this codebase only |
+| POST | `/codebases/:id/attempts` | Authenticated | Compatibility alias to create/retrieve the active workspace |
+| PATCH | `/codebases/:id/attempts/:attemptId` | Attempt owner | Compatibility save alias; requires revision and rejects traversal paths |
+| POST | `/codebases/:id/submissions` | Workspace owner | Persist immutable file snapshot, status `NOT_EVALUATED` |
 | GET | `/codebases/:id/submissions` | Authenticated | Current user's submission metadata only |
+| GET | `/submissions?codebaseId=` | Authenticated | Current user's submission summaries |
+| GET | `/submissions/:submissionId` | Submission owner | View own immutable snapshot contents |
+| GET | `/progress` | Authenticated | Own progress and currently available bookmarks; no auto-completion |
 | GET | `/creator/codebases` | Creator or admin | Current creator's records |
 | POST | `/creator/codebases` | Creator or admin | Create draft |
 | GET | `/creator/codebases/:id` | Creator/admin + owner | Draft/published private creator view |
@@ -46,6 +55,6 @@ Base URL: `/api/v1`. Success shape: `{ "success": true, "data": ... }`; collecti
 | POST | `/codebase-battles/:id/register` | Authenticated | Register before deadline; duplicate rejected |
 | GET | `/codebase-battles/:id/leaderboard` | Authenticated | Empty disabled response, explicitly not ranked |
 
-Endpoints from the full product brief that are not listed above are not implemented yet. In particular, candidate progress dashboards, battle cancellation/management, participant listing, live battle submissions, and real evaluation are pending.
+Endpoints from the full product brief that are not listed above are not implemented yet. Battle cancellation/management, participant listing, live battle submissions, and actual evaluation remain pending.
 
-Creator routes require creator or admin role and scope every record lookup to the authenticated owner. Draft inputs are allowlisted; owner, state, and internal storage keys are server-controlled. Candidate routes read published records only and use the public serializer, which omits all private interviewer fields and internal storage keys. ZIP ingestion is limited by compressed size, expanded size, file count, per-file bytes, accepted extensions, and safe relative paths. Project files currently use private local disk storage configured by `CODEBASE_STORAGE_DIR`.
+Creator routes require creator or admin role and scope every record lookup to the authenticated owner. Draft inputs are allowlisted; owner, state, and internal storage keys are server-controlled. Candidate routes read published records only and use an explicit public serializer, which omits private interviewer fields, version-series internals, and storage keys. Candidate workspace writes require ownership and a monotonically increasing revision. ZIP ingestion is limited by compressed size, expanded size, file count, per-file bytes, accepted extensions, and safe relative paths. Project, workspace, and snapshot files currently use private local disk storage configured by `CODEBASE_STORAGE_DIR`.

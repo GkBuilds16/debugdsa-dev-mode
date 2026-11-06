@@ -82,6 +82,7 @@ export async function publishDraft(doc) {
   doc.seriesId = seriesId;
   doc.version = Math.max(doc.version || 1, (latest?.version || 0) + 1);
   doc.state = 'PUBLISHED';
+  doc.publishedAt = new Date();
   const version = await CodebaseVersion.create({ seriesId, codebaseId: doc._id, version: doc.version, creatorId: doc.ownerId, snapshot: snapshot(doc) });
   try { await doc.save(); }
   catch (error) { await CodebaseVersion.deleteOne({ _id: version._id }); throw error; }

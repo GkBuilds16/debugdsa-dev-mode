@@ -29,6 +29,7 @@ test('project file paths reject traversal, absolute paths, secrets, and unsuppor
   for (const value of ['../escape.js', 'src/../../escape.js', '/etc/passwd', 'C:\\secret.js', '.env', 'bin/program.exe']) assert.throws(() => normalizeProjectPath(value));
   assert.equal(normalizeProjectPath('src\\main.js'), 'src/main.js');
   assert.throws(() => validateProjectFiles([{ path: 'src/a.js', content: 'a' }, { path: 'src/a.js', content: 'b' }]), /Duplicate/);
+  assert.throws(() => validateProjectFiles([{ path: 'src/lib.js', content: 'a' }, { path: 'src/lib.js/main.js', content: 'b' }]), /both a file and a directory/);
 });
 
 test('ZIP importer accepts bounded text source and rejects traversal and symlink entries', async () => {

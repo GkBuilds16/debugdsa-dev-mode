@@ -29,6 +29,7 @@ export function validateProjectFiles(files) {
   return files.map(file => {
     const filePath = normalizeProjectPath(file.path);
     if (seen.has(filePath.toLowerCase())) throw new Error(`Duplicate file path: ${filePath}`);
+    if ([...seen].some(existing => filePath.toLowerCase().startsWith(`${existing}/`) || existing.startsWith(`${filePath.toLowerCase()}/`))) throw new Error(`A project path cannot be both a file and a directory: ${filePath}`);
     seen.add(filePath.toLowerCase());
     if (typeof file.content !== 'string' || file.content.includes('\0')) throw new Error(`File ${filePath} must contain UTF-8 text.`);
     const size = Buffer.byteLength(file.content, 'utf8');

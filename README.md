@@ -8,14 +8,17 @@ An independent React and Express feature package for **Post Codebase**, **View C
 - Post Codebase creator dashboard with persisted status metrics, search/filters, preview, publish/archive/restore, and published version history.
 - Multi-section Post Codebase editor with metadata, setup instructions, source tree editing, ZIP import, autosave, candidate preview, and private interviewer evaluation fields.
 - Published version snapshots and independent draft forks; project text is held in private local storage using generated keys.
-- Public, paginated published-codebase discovery with text and difficulty filters.
-- Candidate bookmarks, private attempts/workspaces, and submission snapshots are persisted through APIs.
+- Candidate discovery filters by text, difficulty, language, framework, tag, sort, and page; only published codebases are returned.
+- Candidate challenge details, lazy source-file explorer, private multi-file editor, debounced autosave/recovery, reset, immutable submission snapshots, attempt history, bookmarks, and persisted progress.
+- Candidate workspace overrides and submission snapshots use generated local storage references; MongoDB stores ownership, revision, state, and file metadata.
 - Battle scheduling records, creator-role checks, authenticated registration with unique and capacity constraints, and server deadline checks.
 - Candidate APIs explicitly omit creator notes and hidden tests.
 - Candidate execution and competition rankings remain disabled until a genuine isolated evaluator exists.
-- Dark responsive React workspace for creator creation/editing, discovery/detail viewing, and battle registration.
+- Responsive React workspace for creator editing, candidate discovery/debugging, and the existing battle-registration screen.
 
 GitHub import currently validates a public repository URL and then returns 501; it does not fetch source. MongoDB connectivity and persistent-storage deployment have not been verified. This is an active implementation baseline, not a claim that every item in the master implementation brief is delivered. See [known limitations](docs/deployment.md).
+
+Candidate submission status is `NOT_EVALUATED`: the repository does not execute code or generate scores or feedback. The candidate editor uses a lightweight text editor built into the frontend instead of adding a heavyweight IDE dependency.
 
 ## Run locally
 
