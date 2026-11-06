@@ -1,0 +1,5 @@
+# Deployment and limitations
+
+Run backend and frontend as separate processes; configure the ingress to serve the frontend and proxy `/api/*` to Express. Set `MONGODB_URI`, `FRONTEND_ORIGIN`, and production JWT settings in the deployment secret manager. Production startup requires JWT mode and a secret of at least 32 bytes. TLS should terminate at the platform ingress. Use a database account scoped to the Dev Mode collections and review indexes before rollout.
+
+Known limitations: no ZIP/GitHub ingestion or external file storage; candidate attempt, bookmark, workspace-save, and disabled submission APIs exist, but there is no candidate editing workspace UI or progress dashboard. There is no evaluation sandbox, battle creation/management UI, battle completion scheduler, final ranking, or Socket.IO room. Registration deadline, uniqueness, and capacity reservation are enforced server-side; live state transitions are not automated. MongoDB connectivity was not verified as part of this audit. These limitations remain before claiming the full acceptance criteria. No mock result is described as code execution.
